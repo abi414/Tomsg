@@ -1021,8 +1021,8 @@ onclick="openAdminSection('reportsSection',this)">
 </div>
 
 <div class="menu-item"
-onclick="openAdminSection('workersSection',this)">
-👷 Workers
+onclick="openAdminSection('addWorkerSection',this)">
+➕ Add Worker
 </div>
 
 </div>
@@ -1118,6 +1118,7 @@ font-weight:bold;
 </div>
 
 </div>
+
 
 <!-- RECENT SUBMISSION -->
 
@@ -1455,7 +1456,109 @@ Workers
 </div>
 
 </div>
+
+<!-- ADD WORKER -->
+<div id="addWorkerSection"
+class="admin-section">
+
+<div class="dashboard-content">
+
+<h1 class="dashboard-title">
+Manual Attendance Entry
+</h1>
+
+<div class="big-card">
+
+<div class="form-group">
+<label>Worker Name</label>
+<input type="text"
+id="adminWorkerName"
+placeholder="Enter Worker Name">
 </div>
+
+<div class="form-group">
+<label>FIN Number</label>
+<input type="text"
+id="adminFinNumber"
+placeholder="Enter FIN Number">
+</div>
+
+<div class="form-group">
+<label>Date</label>
+<input type="date"
+id="adminWorkDate">
+</div>
+
+<div class="form-group">
+<div class="form-group">
+
+<label>Time In</label>
+
+<div style="display:flex;gap:10px;">
+
+<input
+type="time"
+id="adminTimeIn"
+style="flex:1;">
+
+<select
+id="adminTimeInFormat"
+style="padding:14px;border:1px solid #ccc;border-radius:12px;">
+
+<option value="AM">AM</option>
+<option value="PM">PM</option>
+
+</select>
+
+</div>
+
+</div>
+</div>
+
+<div class="form-group">
+<div class="form-group">
+
+<label>Time Out</label>
+
+<div style="display:flex;gap:10px;">
+
+<input
+type="time"
+id="adminTimeOut"
+style="flex:1;">
+
+<select
+id="adminTimeOutFormat"
+style="padding:14px;border:1px solid #ccc;border-radius:12px;">
+
+<option value="AM">AM</option>
+<option value="PM">PM</option>
+
+</select>
+
+</div>
+
+</div>
+</div>
+
+<div class="form-group">
+<label>Remarks</label>
+<textarea
+id="adminRemarks"
+placeholder="Remarks"></textarea>
+</div>
+
+<button class="btn primary-btn"
+onclick="adminAddAttendance()">
+Save Record
+</button>
+
+</div>
+
+</div>
+
+</div>
+
 <script type="module">
 import { initializeApp }
 from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
@@ -1525,6 +1628,34 @@ window.openPage = function(pageId){
 
     document.getElementById(pageId)
     .classList.add('active');
+
+    // Hide reset password box
+    let resetBox =
+    document.getElementById("resetBox");
+
+    if(resetBox){
+
+        resetBox.style.display = "none";
+
+    }
+
+    let resetEmail =
+    document.getElementById("resetEmail");
+
+    if(resetEmail){
+
+        resetEmail.value = "";
+
+    }
+
+    let resetMessage =
+    document.getElementById("resetMessage");
+
+    if(resetMessage){
+
+        resetMessage.style.display = "none";
+
+    }
 
 }
 
@@ -2081,7 +2212,79 @@ function updateCounts(){
     "Total Records : " + total;
 
 }
+window.adminAddAttendance = async function(){
 
+    let workerName =
+    document.getElementById("adminWorkerName").value.trim();
+
+    let finNumber =
+    document.getElementById("adminFinNumber").value.trim();
+
+    let workDate =
+    document.getElementById("adminWorkDate").value;
+
+   let timeIn =
+document.getElementById("adminTimeIn").value +
+" " +
+document.getElementById("adminTimeInFormat").value;
+
+let timeOut =
+document.getElementById("adminTimeOut").value +
+" " +
+document.getElementById("adminTimeOutFormat").value;
+    let remarks =
+    document.getElementById("adminRemarks").value.trim();
+
+    if(
+        workerName === "" ||
+        finNumber === "" ||
+        workDate === "" ||
+        timeIn === ""
+    ){
+
+        alert("Please fill all required fields");
+
+        return;
+
+    }
+
+    try{
+
+        await addDoc(
+            collection(db,"attendance"),
+            {
+                workerName,
+                finNumber,
+                workDate,
+                timeIn,
+                timeOut,
+                remarks,
+                createdAt: new Date()
+            }
+        );
+
+        alert("Attendance Record Added Successfully");
+
+        document.getElementById("adminWorkerName").value = "";
+        document.getElementById("adminFinNumber").value = "";
+        document.getElementById("adminWorkDate").value = "";
+        document.getElementById("adminTimeIn").value = "";
+        document.getElementById("adminTimeOut").value = "";
+        document.getElementById("adminRemarks").value = "";
+
+        loadAttendance();
+
+    }
+
+    catch(error){
+
+        console.log(error);
+
+        alert("Failed To Save Record");
+
+    }
+
+}
 </script>
 
 </body>
