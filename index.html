@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Tech Marine O</title>
+<title>Tech Marine Offshore</title>
 
 <!-- Excel Library -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -834,6 +834,7 @@ onclick="openPage('homePage')">
      ADMIN LOGIN
 ========================= -->
 
+```html
 <div id="adminLoginPage" class="page">
 
 <div class="form-page">
@@ -870,20 +871,77 @@ placeholder="Enter Password">
 
 </div>
 
+<p style="text-align:right; margin-top:-10px; margin-bottom:15px;">
+    <a href="javascript:void(0)"
+       onclick="showResetBox()"
+       style="color:#df3d1d; text-decoration:none; font-weight:600;">
+       Forgot Password?
+    </a>
+</p>
+
 <button class="btn primary-btn"
 onclick="login()">
 Sign In
 </button>
+
+<div id="resetBox"
+style="
+display:none;
+margin-top:20px;
+padding:20px;
+background:#f8f9fa;
+border-radius:15px;
+border:1px solid #ddd;
+">
+
+<h3 style="margin-bottom:15px;color:#df3d1d;">
+Reset Password
+</h3>
+
+<input
+type="email"
+id="resetEmail"
+placeholder="Enter Admin Email"
+style="
+width:100%;
+padding:14px;
+border:1px solid #ccc;
+border-radius:10px;
+margin-bottom:15px;
+">
+
+<button
+onclick="sendResetLink()"
+style="
+width:100%;
+padding:12px;
+background:#df3d1d;
+color:white;
+border:none;
+border-radius:10px;
+cursor:pointer;
+">
+Send Reset Link
+</button>
+
+<p id="resetMessage"
+style="
+display:none;
+margin-top:15px;
+padding:12px;
+border-radius:10px;
+font-weight:bold;
+text-align:center;
+">
+</p>
+
+</div>
 
 <button class="btn secondary-btn"
 onclick="openPage('homePage')">
 ← Back
 </button>
 
-<p style="text-align:center;margin-top:15px;color:#777;">
-
-</p>
-
 </div>
 
 </div>
@@ -891,6 +949,8 @@ onclick="openPage('homePage')">
 </div>
 
 </div>
+```
+
 
 <!-- =========================
      ADMIN DASHBOARD
@@ -1413,7 +1473,8 @@ from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import {
   getAuth,
   signInWithEmailAndPassword,
-  signOut
+  signOut,
+  sendPasswordResetEmail
 }
 from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
@@ -1505,6 +1566,75 @@ window.login = async function(){
 
 }
 
+/* =========================
+   RESET PASSWORD BOX
+========================= */
+window.showResetBox = function(){
+
+    document.getElementById("resetBox")
+    .style.display = "block";
+
+}
+
+window.sendResetLink = async function(){
+
+    let email =
+    document.getElementById("resetEmail").value;
+
+    let msg =
+    document.getElementById("resetMessage");
+
+    if(email === ""){
+
+        msg.style.display = "block";
+        msg.style.background = "#f8d7da";
+        msg.style.color = "#721c24";
+        msg.innerHTML = "Please enter email address";
+
+        return;
+    }
+
+    try{
+
+        await sendPasswordResetEmail(
+            auth,
+            email
+        );
+
+        msg.style.display = "block";
+        msg.style.background = "#d4edda";
+        msg.style.color = "#155724";
+        msg.innerHTML =
+        "✓ Password reset email sent successfully";
+
+        setTimeout(() => {
+
+            document.getElementById("resetBox")
+            .style.display = "none";
+
+            document.getElementById("resetEmail")
+            .value = "";
+
+            document.getElementById("resetMessage")
+            .style.display = "none";
+
+        }, 1000);
+
+    }
+
+    catch(error){
+
+        msg.style.display = "block";
+        msg.style.background = "#f8d7da";
+        msg.style.color = "#721c24";
+        msg.innerHTML =
+        "✗ Failed to send reset email";
+
+        console.log(error);
+
+    }
+
+}
 /* =========================
    LOGOUT
 ========================= */
