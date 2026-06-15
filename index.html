@@ -1758,24 +1758,24 @@ window.openAdminSection = function(sectionId,element){
 }
 
 /*<!-- fetch attendance fine number --*/
-window.fetchWorkerDetails = async function(){
+window.fetchWorkerDetails = async function () {
 
     let finNumber =
-    document.getElementById("finNumber").value.trim();
+        document.getElementById("finNumber").value.trim();
 
-    if(finNumber === ""){
+    if (finNumber === "") {
         alert("Enter FIN Number");
         return;
     }
 
     const q = query(
-        collection(db,"workers"),
-        where("finNumber","==",finNumber)
+        collection(db, "workers"),
+        where("finNumber", "==", finNumber)
     );
 
     const snap = await getDocs(q);
 
-    if(snap.empty){
+    if (snap.empty) {
         alert("Worker Not Registered");
         return;
     }
@@ -1783,50 +1783,44 @@ window.fetchWorkerDetails = async function(){
     const worker = snap.docs[0].data();
 
     document.getElementById("workerName").value =
-    worker.workerName;
+        worker.workerName;
 
-    const now = new Date();
+    // ✅ CLEAN DATE BLOCK (NO INDENTATION ISSUE)
+    const d = new Date();
 
-    document.getElementById("workDate").value =
-    now.toISOString().split("T")[0];
+    const day = String(d.getDate()).padStart(2, "0");
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+    const year = d.getFullYear();
+
+    const today = `${day}-${month}-${year}`;
+
+    document.getElementById("workDate").value = today;
 
     const attendanceQuery = query(
-        collection(db,"attendance"),
-        where("finNumber","==",finNumber),
-        where(
-            "workDate",
-            "==",
-            now.toISOString().split("T")[0]
-        )
+        collection(db, "attendance"),
+        where("finNumber", "==", finNumber),
+        where("workDate", "==", today)
     );
 
     const attendanceSnap =
-    await getDocs(attendanceQuery);
+        await getDocs(attendanceQuery);
 
-    if(attendanceSnap.empty){
+    const nowTime = new Date().toLocaleTimeString("en-SG", {
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: true
+    }).toUpperCase();
 
-        document.getElementById("timeIn").value =
-document.getElementById("timeIn").value =
-now.toLocaleTimeString("en-SG",{
-    hour:"2-digit",
-    minute:"2-digit",
-    hour12:true
-}).toUpperCase();
+    if (attendanceSnap.empty) {
 
+        document.getElementById("timeIn").value = nowTime;
         document.getElementById("timeOut").value = "";
 
-    }else{
+    } else {
 
-        document.getElementById("timeOut").value =
-document.getElementById("timeOut").value =
-now.toLocaleTimeString("en-SG",{
-    hour:"2-digit",
-    minute:"2-digit",
-    hour12:true
-}).toUpperCase();
+        document.getElementById("timeOut").value = nowTime;
     }
-}
-
+};
 /* =========================
    SUBMIT ATTENDANCE
 ========================= */
