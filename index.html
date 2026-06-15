@@ -507,30 +507,7 @@ table td{
         flex-shrink:0;
     }
 
-    /* DASHBOARD */
-    .dashboard-content{
-        padding:18px;
-    }
-
-    .dashboard-title{
-        font-size:28px;
-    }
-
-    .dashboard-date{
-        font-size:16px;
-    }
-
-    /* WELCOME CARD */
-    .dashboard-content h1{
-        font-size:28px !important;
-    }
-
-    /* STATS */
-    .stats-grid{
-        grid-template-columns:1fr;
-    }
-
-    .stat-card{
+    /* DASHBOARD>
         padding:20px;
     }
 
@@ -711,88 +688,52 @@ onclick="openPage('adminLoginPage')">
 
 <div class="form-group">
 
-<label>Worker Name</label>
-
-<input type="text"
-id="workerName"
-placeholder="Enter Full Name">
-
+<div class="form-group">
+    <label>FIN Number</label>
+    <input
+    type="text"
+    id="finNumber"
+    placeholder="Enter FIN Number">
 </div>
 
-<div class="form-row">
+<button
+type="button"
+class="btn primary-btn"
+onclick="fetchWorkerDetails()">
+ENTRY
+</button>
 
 <div class="form-group">
-
-<label>FIN Number</label>
-
-<input type="text"
-id="finNumber"
-placeholder="S1234567A">
-
-</div>
-
-<div class="form-group">
-
-<label>Date</label>
-
-<input type="date"
-id="workDate"
-required>
-
-</div>
-
-</div>
-
-<div class="form-row">
-
-<div class="form-group">
-
-<label>Time In</label>
-
-<div style="display:flex;gap:10px;">
-
-<input type="time"
-id="timeIn"
-required
-style="flex:1;">
-
-<select id="timeInFormat"
-style="padding:14px;border:1px solid #ccc;border-radius:12px;">
-
-<option value="AM">AM</option>
-<option value="PM">PM</option>
-
-</select>
-
-</div>
+    <label>Worker Name</label>
+    <input
+    type="text"
+    id="workerName"
+    readonly>
 </div>
 
 <div class="form-group">
-
-<label>Time Out</label>
-
-<div style="display:flex;gap:10px;">
-
-<input type="time"
-id="timeOut"
-style="flex:1;">
-
-<select id="timeOutFormat"
-style="padding:14px;border:1px solid #ccc;border-radius:12px;">
-
-<option value="AM">AM</option>
-<option value="PM">PM</option>
-
-</select>
-
-</div>
-
-</div>
+    <label>Date</label>
+    <input
+    type="date"
+    id="workDate"
+    readonly>
 </div>
 
 <div class="form-group">
+    <label>Time In</label>
+    <input
+    type="text"
+    id="timeIn"
+    readonly>
+</div>
 
-<label>Remarks</label>
+<div class="form-group">
+    <label>Time Out</label>
+    <input
+    type="text"
+    id="timeOut"
+    readonly>
+</div>
 
 <textarea
 id="remarks"
@@ -1237,7 +1178,7 @@ border-radius:12px;
 font-size:16px;
 ">
 
-<button onclick="searchWorker()"
+<button onclick="searchAttendance()"
 style="
 padding:14px 25px;
 background:#003b8f;
@@ -1802,6 +1743,76 @@ window.openAdminSection = function(sectionId,element){
 
 }
 
+/*<!-- fetch attendance fine number --*/
+window.fetchWorkerDetails = async function(){
+
+    let finNumber =
+    document.getElementById("finNumber").value.trim();
+
+    if(finNumber === ""){
+        alert("Enter FIN Number");
+        return;
+    }
+
+    const q = query(
+        collection(db,"workers"),
+        where("finNumber","==",finNumber)
+    );
+
+    const snap = await getDocs(q);
+
+    if(snap.empty){
+        alert("Worker Not Registered");
+        return;
+    }
+
+    const worker = snap.docs[0].data();
+
+    document.getElementById("workerName").value =
+    worker.workerName;
+
+    const now = new Date();
+
+    document.getElementById("workDate").value =
+    now.toISOString().split("T")[0];
+
+    const attendanceQuery = query(
+        collection(db,"attendance"),
+        where("finNumber","==",finNumber),
+        where(
+            "workDate",
+            "==",
+            now.toISOString().split("T")[0]
+        )
+    );
+
+    const attendanceSnap =
+    await getDocs(attendanceQuery);
+
+    if(attendanceSnap.empty){
+
+        document.getElementById("timeIn").value =
+document.getElementById("timeIn").value =
+now.toLocaleTimeString("en-SG",{
+    hour:"2-digit",
+    minute:"2-digit",
+    hour12:true
+}).toUpperCase();
+
+        document.getElementById("timeOut").value = "";
+
+    }else{
+
+        document.getElementById("timeOut").value =
+document.getElementById("timeOut").value =
+now.toLocaleTimeString("en-SG",{
+    hour:"2-digit",
+    minute:"2-digit",
+    hour12:true
+}).toUpperCase();
+    }
+}
+
 /* =========================
    SUBMIT ATTENDANCE
 ========================= */
@@ -1819,14 +1830,12 @@ window.submitAttendance = async function(){
     let timeInRaw =
     document.getElementById("timeIn").value;
 
-    let timeInFormat =
-    document.getElementById("timeInFormat").value;
+    
 
     let timeOutRaw =
     document.getElementById("timeOut").value;
 
-    let timeOutFormat =
-    document.getElementById("timeOutFormat").value;
+    
 
     let remarks =
     document.getElementById("remarks").value.trim();
@@ -1844,16 +1853,9 @@ if(finNumber === ""){
 
 
     // FINAL TIME FORMAT
-    let timeIn =
-    timeInRaw + " " + timeInFormat;
+let timeIn = timeInRaw;
 
-    let timeOut = "";
-
-    if(timeOutRaw !== ""){
-
-        timeOut =
-        timeOutRaw + " " + timeOutFormat;
-    }
+let timeOut = timeOutRaw;
 
     try{
 
@@ -1883,15 +1885,29 @@ if(snapshot.empty){
 }
 else{
 
-    const docRef = snapshot.docs[0];
+    const record = snapshot.docs[0].data();
+
+    // Already has Time Out
+    if(record.timeOut && record.timeOut !== ""){
+
+        alert(
+            "Attendance already completed for today"
+        );
+
+        return;
+    }
 
     await updateDoc(
-        doc(db, "attendance", docRef.id),
+        doc(
+            db,
+            "attendance",
+            snapshot.docs[0].id
+        ),
         {
-            timeOut: timeOut
+            timeOut: timeOut,
+            remarks: remarks
         }
     );
-
 }
 
         document.getElementById("submitMessage").style.display = "block";
@@ -1912,6 +1928,8 @@ else{
         document.getElementById("timeIn").value = "";
         document.getElementById("timeOut").value = "";
         document.getElementById("remarks").value = "";
+        // set focus back to FIN input for next worker
+document.getElementById("finNumber").focus();
 
     }
 
@@ -2049,7 +2067,54 @@ async function loadAttendance(){
 
 }
 
+/*search fin no report*/
+window.searchAttendance = async function () {
 
+    let input = document.getElementById("searchFin").value.trim().toUpperCase();
+
+    const snap = await getDocs(collection(db, "attendance"));
+
+    let resultBox = document.getElementById("searchResult");
+    resultBox.style.display = "block";
+
+    let found = null;
+
+    snap.forEach(docItem => {
+        let data = docItem.data();
+
+        if (data.finNumber.toUpperCase().includes(input)) {
+            found = data;
+        }
+    });
+
+    if (!found) {
+        resultBox.innerHTML = "❌ No matching record found";
+        return;
+    }
+
+    resultBox.innerHTML = `
+        <div style="
+            background:#ffffff;
+            padding:20px;
+            border-radius:15px;
+            border-left:5px solid #003b8f;
+            line-height:1.8;
+        ">
+
+            <h2 style="color:#003b8f;margin-bottom:15px;">
+                Worker Attendance Details
+            </h2>
+
+            <p><b>👷 Worker Name:</b> ${found.workerName}</p>
+            <p><b>🆔 FIN Number:</b> ${found.finNumber}</p>
+            <p><b>📅 Date:</b> ${found.workDate}</p>
+            <p><b>🟢 Time In:</b> ${found.timeIn || "-"}</p>
+            <p><b>🔴 Time Out:</b> ${found.timeOut || "-"}</p>
+            <p><b>📝 Remarks:</b> ${found.remarks || "-"}</p>
+
+        </div>
+    `;
+};
 /* =========================
    DOWNLOAD EXCEL
 ========================= */
